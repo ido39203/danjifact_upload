@@ -1,0 +1,774 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>단지팩트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#141414;--paper:#FAFAF8;--line:#D4D4D4;--mute:#6B6B6B;--soft:#F0F0EC;--hdr:56px}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font-family:"IBM Plex Sans KR",system-ui,"Malgun Gothic",sans-serif;font-size:15px;line-height:1.55}
+.mono{font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace}
+button{font:inherit;border:2px solid var(--ink);background:var(--ink);color:#fff;padding:7px 14px;cursor:pointer}
+button.ghost{background:#fff;color:var(--ink)}
+button.text{border:0;background:none;color:var(--ink);padding:4px 6px;text-decoration:underline;text-underline-offset:3px}
+button:disabled{opacity:.4;cursor:not-allowed}
+input[type=text],input[type=password],input[type=search],textarea,select{font:inherit;border:1.5px solid var(--ink);background:#fff;color:var(--ink);padding:8px 10px;width:100%}
+textarea{resize:vertical;min-height:120px}
+svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px}
+
+header{height:var(--hdr);display:flex;align-items:center;gap:14px;padding:0 16px;border-bottom:2px solid var(--ink);background:#fff;position:sticky;top:0;z-index:20}
+.logo{font-weight:700;font-size:19px;letter-spacing:-.3px}
+.logo small{font-weight:400;font-size:12px;color:var(--mute);margin-left:4px}
+.region{font-size:13px;color:var(--mute)}
+header .sp{flex:1}
+header button{padding:6px 10px;display:flex;gap:6px;align-items:center}
+.banner{border-bottom:1.5px dashed var(--ink);background:var(--soft);padding:8px 16px;font-size:13.5px}
+
+.layout{display:grid;grid-template-columns:340px 1fr;min-height:calc(100vh - var(--hdr));background:linear-gradient(to right,#fff 340px,var(--paper) 340px)}
+.side{border-right:2px solid var(--ink);background:#fff;display:flex;flex-direction:column;height:calc(100vh - var(--hdr));position:sticky;top:var(--hdr)}
+.side .search{padding:14px;border-bottom:1.5px solid var(--line)}
+.side .count{font-size:12px;color:var(--mute);margin-top:6px}
+.list{overflow:auto;flex:1;margin:0;padding:0;list-style:none}
+.list li button{display:block;width:100%;text-align:left;background:#fff;color:var(--ink);border:0;border-bottom:1px solid var(--line);padding:10px 14px}
+.list li button:hover{background:var(--soft)}
+.list li button[aria-current=true]{background:var(--ink);color:#fff}
+.list .nm{font-weight:500}
+.list .ad{font-size:12px;opacity:.75}
+.list .rv{float:right;font-size:11px;border:1px solid currentColor;padding:0 5px;margin-left:6px}
+.main{min-width:0}
+#map{height:320px;border-bottom:2px solid var(--ink);background:var(--soft);position:relative}
+.mapmsg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:16px;font-size:14px;color:var(--mute)}
+.pin{width:12px;height:12px;border:2px solid var(--ink);background:#fff;border-radius:50%;cursor:pointer}
+.pin.on{width:16px;height:16px;background:var(--ink)}
+.pinlabel{background:var(--ink);color:#fff;font-size:12px;padding:3px 8px;white-space:nowrap;transform:translateY(-26px)}
+
+.detail{padding:22px 22px 60px;max-width:980px}
+.empty{color:var(--mute);padding:40px 0}
+h1.cx{font-size:24px;margin:0}
+.addr{color:var(--mute);font-size:13.5px;margin:2px 0 0}
+.warn{font-size:12.5px;border:1.5px dashed var(--ink);display:inline-block;padding:1px 8px;margin-top:6px}
+section.card{border:2px solid var(--ink);background:#fff;padding:16px;margin-top:16px}
+section.card>h2{font-size:16px;margin:0 0 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+section.card>h2 .note{font-weight:400;font-size:12.5px;color:var(--mute)}
+.facts{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1.5px solid var(--ink)}
+.facts>div{padding:10px 12px;border-right:1px solid var(--line)}
+.facts>div:last-child{border-right:0}
+.facts .k{font-size:12px;color:var(--mute)}
+.facts .v{font-family:"IBM Plex Mono",monospace;font-size:19px;font-weight:500}
+.facts .s{font-size:12px;color:var(--mute)}
+.nodata{color:var(--mute);font-size:14px;font-family:inherit}
+.seg{display:inline-flex;border:1.5px solid var(--ink)}
+.seg button{border:0;background:#fff;color:var(--ink);padding:3px 10px;font-size:13px}
+.seg button[aria-pressed=true]{background:var(--ink);color:#fff}
+.ctrls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px;font-size:13px}
+
+.fc{display:grid;grid-template-columns:110px 1fr 1fr 1.3fr;border:1.5px solid var(--ink)}
+.fc>div{padding:10px 12px;border-bottom:1px solid var(--line);border-right:1px solid var(--line)}
+.fc>div:nth-child(4n){border-right:0}
+.fc .hd{font-size:12px;color:var(--mute);background:var(--soft)}
+.fc .it{font-weight:700}
+.small{font-size:12.5px;color:var(--mute)}
+.badge{display:inline-block;font-size:12.5px;padding:1px 8px;border:2px solid var(--ink);margin:2px 4px 2px 0;white-space:nowrap}
+.b-match{background:var(--ink);color:#fff}
+.b-split{background:repeating-linear-gradient(135deg,#fff 0 5px,#E4E4E0 5px 7px)}
+.b-hold{border-style:dashed}
+.b-none{border:1px solid var(--line);color:var(--mute);background:#fff}
+.b-skip{border-color:transparent;color:var(--mute);padding-left:0}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:10px;font-size:12.5px;color:var(--mute)}
+.more{margin-top:10px;font-weight:500}
+.others{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.others>div{border:1px solid var(--line);padding:8px 10px;font-size:13px}
+
+table.units{border-collapse:collapse;width:100%;font-size:13.5px}
+table.units th,table.units td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:right}
+table.units th:first-child,table.units td:first-child{text-align:left}
+table.units th{font-weight:500;color:var(--mute)}
+
+.form label{display:block;font-size:13px;font-weight:500;margin:10px 0 4px}
+.form .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.rate{display:flex;flex-wrap:wrap;gap:6px}
+.rate label{margin:0;font-weight:400;border:1.5px solid var(--ink);padding:3px 10px;cursor:pointer;display:flex;gap:6px;align-items:center}
+.rate input{accent-color:var(--ink)}
+.preview{border:1px dashed var(--ink);background:var(--soft);padding:8px 10px;font-size:13.5px;white-space:pre-wrap;margin-top:8px}
+.msg{font-size:13.5px;margin-top:8px;min-height:1em}
+.msg.err{border-left:3px solid var(--ink);padding-left:10px;font-weight:500}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+
+.review{border:1.5px solid var(--ink);padding:12px 14px;margin-top:12px;background:#fff}
+.review .meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--mute)}
+.review .meta .tag{border:1px solid var(--ink);color:var(--ink);padding:0 6px}
+.review .body{white-space:pre-wrap;margin:8px 0}
+.review mark{background:none;color:inherit;border-bottom:2px solid var(--ink);font-weight:500}
+.review .rrow{display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:13px;border-top:1px solid var(--line);padding-top:8px}
+.review .rrow select{width:auto;padding:3px 6px;font-size:13px}
+.review .src{font-size:11.5px;color:var(--mute)}
+.ai{border-top:1px solid var(--line);margin-top:8px;padding-top:8px}
+.ai table{border-collapse:collapse;width:100%;font-size:13px;margin-top:6px}
+.ai td,.ai th{border-bottom:1px solid var(--line);padding:5px 6px;text-align:left;vertical-align:top}
+.ai th{font-weight:500;color:var(--mute)}
+.ai td:nth-child(-n+3),.ai th:nth-child(-n+3){white-space:nowrap}
+.ai .label{font-size:12px;border:1.5px dashed var(--ink);padding:1px 8px;display:inline-block;margin-bottom:4px}
+
+dialog{border:2px solid var(--ink);padding:0;max-width:560px;width:calc(100% - 32px);background:#fff;color:var(--ink)}
+dialog::backdrop{background:rgba(20,20,20,.35)}
+dialog .dh{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:2px solid var(--ink);font-weight:700}
+dialog .db{padding:14px 16px 18px;max-height:70vh;overflow:auto}
+dialog label{display:block;font-size:13px;font-weight:500;margin:10px 0 4px}
+dialog .check{display:flex;gap:6px;align-items:center;font-weight:400}
+dialog h3{font-size:14px;margin:16px 0 0;padding-top:12px;border-top:1px solid var(--line)}
+dialog h3:first-child{margin-top:0;padding-top:0;border-top:0}
+.vrow{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid var(--line);padding:6px 0;font-size:14px}
+
+@media (max-width:860px){
+  .layout{grid-template-columns:1fr;background:var(--paper)}
+  .side{position:static;height:auto;border-right:0;border-bottom:2px solid var(--ink)}
+  .list{max-height:260px}
+  #map{height:260px}
+  .detail{padding:16px 16px 48px}
+  .facts{grid-template-columns:repeat(2,1fr)}
+  .facts>div:nth-child(2){border-right:0}
+  .facts>div:nth-child(-n+2){border-bottom:1px solid var(--line)}
+  .fc{grid-template-columns:1fr 1fr}
+  .fc .hd{display:none}
+  .fc>div{border-right:0}
+  .fc .it{grid-column:1/-1;background:var(--soft)}
+  .others{grid-template-columns:1fr 1fr}
+  .form .two{grid-template-columns:1fr}
+  .region{display:none}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">단지팩트<small>가칭</small></div>
+  <div class="region" id="region"></div>
+  <div class="sp"></div>
+  <button class="ghost" id="vaultBtn" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16v13H4z"/><path d="M8 7V4h8v3"/><path d="M9 12h6"/></svg>보관함</button>
+  <button class="ghost" id="setBtn" type="button"><svg class="i" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9"/><path d="M17 6l3 3"/><path d="M14 9l2 2"/></svg>키 설정</button>
+</header>
+<div class="banner" id="banner" hidden></div>
+<div class="layout">
+  <aside class="side">
+    <div class="search">
+      <input type="search" id="q" placeholder="단지명·주소로 찾기" aria-label="단지 검색">
+      <div class="count" id="count"></div>
+    </div>
+    <ul class="list" id="list"></ul>
+  </aside>
+  <div class="main">
+    <div id="map"><div class="mapmsg" id="mapMsg"></div></div>
+    <div class="detail" id="detail"><p class="empty">왼쪽 목록이나 지도에서 단지를 고른다.</p></div>
+  </div>
+</div>
+
+<dialog id="setDlg">
+  <div class="dh">키 설정<button class="text" type="button" data-close>닫기</button></div>
+  <div class="db">
+    <h3>AI 후기 분석</h3>
+    <label for="aiProv">AI 서비스</label>
+    <select id="aiProv"><option value="gemini">Gemini (Google AI Studio 키)</option><option value="claude">Claude (Console 키)</option></select>
+    <label for="aiModel">모델 이름</label>
+    <input type="text" id="aiModel" list="modelList">
+    <datalist id="modelList"><option value="gemini-3.5-flash-lite"><option value="gemini-3.8-flash"><option value="gemini-3.6-flash"><option value="claude-haiku-5-5"></datalist>
+    <p class="small" style="margin:4px 0 0">기본은 gemini-3.5-flash-lite(빠름). 다른 Gemini 모델이 붐비면 자동으로 이 모델로 바꿔 다시 시도한다.</p>
+    <label for="aiKey">API 키</label>
+    <input type="password" id="aiKey" autocomplete="off">
+    <label class="check"><input type="checkbox" id="aiSave"> 이 브라우저에 저장 (체크하지 않으면 새로고침 때 지워짐)</label>
+    <p class="small" style="margin:6px 0 0">키가 없으면 Google AI Studio(aistudio.google.com)에서 Google 계정으로 무료 키를 만든다. 무료 키로 보낸 글과 응답은 Google이 제품 개선에 쓰고 검토자가 읽을 수 있어, 이 화면은 개인정보를 가린 글만 보낸다. 키 없이도 시연용 후기가 있는 단지에서 '시연용 후기 불러오기'로 미리 받아 둔 분석 결과를 볼 수 있다.</p>
+    <h3>지도</h3>
+    <p class="small" id="kkNote" style="margin:4px 0 0"></p>
+    <label for="kkKey">카카오 JavaScript 키</label>
+    <input type="password" id="kkKey" autocomplete="off">
+    <label class="check"><input type="checkbox" id="kkSave"> 이 브라우저에 저장</label>
+    <div class="actions"><button type="button" id="setSave">저장</button><span class="msg" id="setMsg"></span></div>
+    <p class="small">키는 이 브라우저에서 AI 서비스와 카카오로만 보낸다. 후기 원문도 개인정보를 가린 글만 보낸다.</p>
+  </div>
+</dialog>
+
+<dialog id="vaultDlg">
+  <div class="dh">후기 보관함<button class="text" type="button" data-close>닫기</button></div>
+  <div class="db" id="vaultBody"></div>
+</dialog>
+
+<script>
+/* 단지 데이터가 없을 때만 쓰는 예시(실제 단지가 아님) */
+window.DANJI_SAMPLE={meta:{sido:'예시',gu:'예시구',feePeriod:['202601','202608'],sample:true},complexes:[
+ {code:'X001',name:'예시단지 가',address:'예시구 예시로 1',lat:37.655,lng:127.061,households:1200,dongs:12,useDate:'19950301',parkingGround:500,parkingUnder:300,parkingTotal:800,parkingPerHH:0.667,chargeArea:90000,exclTotal:70000,units:[{m2:59.9,hh:600},{m2:84.9,hh:600}],fee:{total:{all:2600,winter:3300,summer:2400},common:{all:1700,winter:1800,summer:1650}}},
+ {code:'X002',name:'예시단지 나',address:'예시구 예시로 2',lat:37.650,lng:127.070,households:800,dongs:8,useDate:'2005',parkingGround:200,parkingUnder:800,parkingTotal:1000,parkingPerHH:1.25,chargeArea:70000,exclTotal:55000,units:[{m2:84.9,hh:800}],fee:{total:{all:3100,winter:3900,summer:2900},common:{all:2100,winter:2200,summer:2050}}},
+ {code:'X003',name:'예시단지 다',address:'예시구 예시로 3',lat:37.660,lng:127.075,households:2000,dongs:20,useDate:'1988',parkingGround:900,parkingUnder:0,parkingTotal:900,parkingPerHH:0.45,chargeArea:120000,exclTotal:95000,units:[{m2:41.3,hh:1000},{m2:49.9,hh:1000}],fee:{total:{all:2200,winter:2900,summer:2000},common:{all:1400,winter:1500,summer:1380}}},
+ {code:'X004',name:'예시단지 라',address:'예시구 예시로 4',lat:37.645,lng:127.058,households:500,dongs:6,useDate:'2012',parkingGround:100,parkingUnder:500,parkingTotal:600,parkingPerHH:1.2,chargeArea:45000,exclTotal:35000,units:[{m2:84.9,hh:300},{m2:114.9,hh:200}],fee:null},
+ {code:'X005',name:'예시단지 마',address:'예시구 예시로 5',lat:null,lng:null,households:300,dongs:3,useDate:'1999',parkingGround:null,parkingUnder:null,parkingTotal:null,parkingPerHH:null,chargeArea:25000,exclTotal:20000,units:[{m2:59.9,hh:300}],fee:{total:{all:2800,winter:3500,summer:2600},common:{all:1900,winter:2000,summer:1850}}},
+ {code:'X006',name:'예시단지 바',address:'예시구 예시로 6',lat:37.652,lng:127.066,households:950,dongs:10,useDate:'2001',parkingGround:400,parkingUnder:500,parkingTotal:900,parkingPerHH:0.947,chargeArea:80000,exclTotal:62000,units:[{m2:59.9,hh:450},{m2:84.9,hh:500}],fee:{total:{all:2700,winter:3400,summer:2500},common:{all:1800,winter:1900,summer:1750}}}
+]};
+</script>
+<script src="data.js"></script>
+<script src="demo.js"></script>
+<script>
+(function(){
+'use strict';
+/* ================= 배포 설정 =================
+   카카오 JavaScript 키는 브라우저에서 쓰라고 만든 공개용 키라 코드에 넣는다.
+   카카오 개발자 콘솔의 JavaScript SDK 도메인에 등록한 주소(배포 주소, file://)에서만 지도가 뜬다.
+   같은 앱의 REST API 키·Admin 키는 넣지 않는다.
+   AI(Gemini·Claude) 키는 비밀 키라 코드에 넣지 않고, 방문자가 키 설정에서 자기 키를 넣는다. */
+var KAKAO_JS_KEY='0201fa353a73db4e8e87474d03109ee2';   // 따옴표 사이에 카카오 JavaScript 키(32자)를 붙여넣는다
+
+/* ================= 공통 ================= */
+var $=function(id){return document.getElementById(id)};
+var LS={reviews:'danjifact:reviews',aiProv:'danjifact:aiProvider',aiModel:'danjifact:aiModel',aiKey:'danjifact:aiKey',kakao:'danjifact:kakaoJsKey'};
+function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function lsSet(k,v){try{ if(v==null||v==='') localStorage.removeItem(k); else localStorage.setItem(k,v); return true;}catch(e){return false}}
+function ssGet(k){try{return sessionStorage.getItem(k)}catch(e){return null}}
+function ssSet(k,v){try{ if(v==null||v==='') sessionStorage.removeItem(k); else sessionStorage.setItem(k,v);}catch(e){}}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function fmt(n,d){ if(n==null||!isFinite(n)) return null; return Number(n).toLocaleString('ko-KR',{maximumFractionDigits:d||0,minimumFractionDigits:d||0}); }
+var ICON={pin:'<svg class="i" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>'};
+
+var DATA=window.DANJI_DATA||window.DANJI_SAMPLE;
+var IS_SAMPLE=!window.DANJI_DATA;
+var DEMO=window.DEMO_REVIEWS||{};
+var CX=DATA.complexes.slice().sort(function(a,b){return a.name.localeCompare(b.name,'ko')});
+var BY={}; CX.forEach(function(c){BY[c.code]=c});
+var GU=DATA.meta.gu||'';
+var ui={sel:null, feeRange:'total', feeSeason:'all', q:''};
+var ITEMS=[['parking','주차'],['fee','관리비'],['transit','교통'],['noise','소음'],['maintenance','관리 상태'],['convenience','생활 편의']];
+var RATINGS=['좋음','보통','나쁨'];
+
+function periodText(p){
+  if(!p||!p[0]) return '자료 기간 정보 없음';
+  var y1=p[0].slice(0,4),m1=+p[0].slice(4,6),y2=p[1].slice(0,4),m2=+p[1].slice(4,6);
+  return (y1===y2? y1+'년 '+m1+'~'+m2+'월' : y1+'년 '+m1+'월~'+y2+'년 '+m2+'월')+' 자료 기준';
+}
+
+/* ================= 개인정보 가림 · 입력 검증 ================= */
+function maskText(t){
+  var n=0;
+  var rep=function(m){n++;return m.replace(/\d/g,'○')};
+  t=t.replace(/\d{1,4}\s*동\s*\d{1,4}\s*호/g,rep);
+  t=t.replace(/(^|[^\d○])(\d{3,4}\s*호)(?![\d])/g,function(m,a,b){return a+rep(b)});
+  t=t.replace(/(^|[^\d])(0\d{1,2}[-.\s]?\d{3,4}[-.\s]?\d{4})(?!\d)/g,function(m,a,b){return a+rep(b)});
+  t=t.replace(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g,function(){n++;return '(이메일 가림)'});
+  return {text:t,count:n};
+}
+function validateReview(t){
+  var s=t.trim();
+  if(!s) return '후기 글을 붙여넣는다.';
+  var noLink=s.replace(/https?:\/\/\S+|www\.\S+/g,'').trim();
+  if(noLink.length<20&&/https?:\/\/|www\./.test(s)) return '링크만 있는 글은 받지 않는다. 후기 본문을 붙여넣는다.';
+  if(s.length<20) return '20자 이상 붙여넣는다. (지금 '+s.length+'자)';
+  if(s.length>1000) return '1,000자까지 받는다. (지금 '+s.length.toLocaleString()+'자)';
+  return null;
+}
+
+/* ================= 후기 저장 ================= */
+var memReviews=null;
+function loadReviews(){ if(memReviews) return memReviews; try{ memReviews=JSON.parse(lsGet(LS.reviews)||'{}')||{}; }catch(e){ memReviews={}; } return memReviews; }
+function saveReviews(){ if(!lsSet(LS.reviews,JSON.stringify(memReviews))) flash('브라우저 저장소에 저장하지 못했다(저장 공간 또는 개인정보 보호 모드 확인).'); }
+function reviewsOf(code){ return (loadReviews()[code]||[]); }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+/* ================= 데이터 쪽 평가 ================= */
+function val(kind,c){
+  if(kind==='parking') return c.parkingPerHH;
+  var f=c.fee; if(!f||!f[ui.feeRange]) return null;
+  return f[ui.feeRange][ui.feeSeason];
+}
+function dataRating(kind,c){
+  var v=val(kind,c); if(v==null) return null;
+  var arr=CX.map(function(x){return val(kind,x)}).filter(function(x){return x!=null});
+  var n=arr.length;
+  var less=arr.filter(function(x){return x<v}).length, more=arr.filter(function(x){return x>v}).length;
+  var pos=n>1?less/(n-1):0.5;                 // 0 = 가장 작음, 1 = 가장 큼
+  var good=kind==='parking'?pos:1-pos;        // 주차는 많을수록, 관리비는 낮을수록 좋음
+  var label=good>=2/3?'좋음':(good<=1/3?'나쁨':'보통');
+  var rank=kind==='parking'?more+1:less+1;
+  return {v:v,label:label,rank:rank,n:n};
+}
+function verdict(reviewR,dataR){
+  if(!reviewR||reviewR==='언급 없음') return null;
+  if(!dataR) return '데이터 없음';
+  if(reviewR==='보통'||dataR.label==='보통') return '판단 보류';
+  return reviewR===dataR.label?'일치':'엇갈림';
+}
+function badge(v){
+  var cls={'일치':'b-match','엇갈림':'b-split','판단 보류':'b-hold','데이터 없음':'b-none','비교 안 함':'b-skip'}[v]||'b-hold';
+  return '<span class="badge '+cls+'">'+esc(v)+'</span>';
+}
+
+/* ================= 목록 ================= */
+function renderList(){
+  var q=ui.q.trim().replace(/\s/g,'');
+  var shown=CX.filter(function(c){ if(!q) return true; return (c.name+(c.address||'')+(c.jibun||'')).replace(/\s/g,'').indexOf(q)>=0; });
+  $('count').textContent=(q?'찾은 단지 '+shown.length+'곳 / ':'')+'전체 '+CX.length+'곳';
+  var R=loadReviews();
+  $('list').innerHTML=shown.map(function(c){
+    var n=(R[c.code]||[]).length;
+    return '<li><button type="button" data-code="'+esc(c.code)+'" aria-current="'+(ui.sel===c.code)+'">'+(n?'<span class="rv">후기 '+n+'</span>':'')+'<div class="nm">'+esc(c.name)+'</div><div class="ad">'+esc(c.address||c.jibun||'주소 없음')+'</div></button></li>';
+  }).join('')||'<li class="small" style="padding:14px">맞는 단지가 없다.</li>';
+}
+$('q').addEventListener('input',function(e){ui.q=e.target.value;renderList()});
+$('list').addEventListener('click',function(e){ var b=e.target.closest('button[data-code]'); if(b) select(b.getAttribute('data-code'),true); });
+
+/* ================= 지도 ================= */
+var map=null, kakaoP=null, pins={}, label=null;
+/* 11/08: 방문자가 넣은 키가 있으면 그 키, 없으면 코드의 기본 키(KAKAO_JS_KEY) */
+function userKakaoKey(){ return memKeys.kakao||ssGet(LS.kakao)||lsGet(LS.kakao)||''; }
+function kakaoKey(){ return userKakaoKey()||KAKAO_JS_KEY; }
+function mapMsg(html){ var m=$('mapMsg'); m.hidden=!html; m.innerHTML=html||''; }
+function mapFailMsg(){
+  var setBtn='<button type="button" class="ghost" data-open-set>키 설정</button>';
+  if(userKakaoKey()) return '<div>지도를 불러오지 못했다. 키 설정에 넣은 카카오 키와, 그 키를 만든 앱의 JavaScript SDK 도메인에 지금 주소가 있는지 확인한다.'+(KAKAO_JS_KEY?' 칸을 비우고 저장하면 기본 키로 돌아간다.':'')+'</div>'+setBtn;
+  var here=location.protocol==='file:'?'file://':location.origin;
+  var bad=!/^[0-9a-f]{32}$/i.test(KAKAO_JS_KEY)?' 코드의 KAKAO_JS_KEY가 32자 키 모양이 아니다(지금 '+KAKAO_JS_KEY.length+'자).':'';
+  return '<div>지도를 불러오지 못했다. 인터넷 연결을 확인하고 새로고침한다.</div><div class="small">개발자 확인: 카카오 콘솔 JavaScript SDK 도메인에 '+esc(here)+' 등록 여부.'+esc(bad)+'</div>';
+}
+function initMap(){
+  var key=kakaoKey();
+  if(!key){ mapMsg('<div>카카오 JavaScript 키를 넣으면 지도가 나온다.</div><button type="button" class="ghost" data-open-set>키 설정</button>'); return; }
+  mapMsg('지도를 불러오는 중');
+  if(!kakaoP){
+    kakaoP=new Promise(function(res,rej){
+      var s=document.createElement('script');
+      s.src='https://dapi.kakao.com/v2/maps/sdk.js?appkey='+encodeURIComponent(key)+'&autoload=false';
+      s.onload=function(){ try{ window.kakao.maps.load(function(){res(window.kakao)}); }catch(e){rej(e)} };
+      s.onerror=function(){ kakaoP=null; rej(new Error('load')) };
+      document.head.appendChild(s);
+    });
+  }
+  kakaoP.then(drawMap).catch(function(){ mapMsg(mapFailMsg()); });
+}
+function drawMap(k){
+  var pts=CX.filter(function(c){return c.lat!=null&&c.lng!=null});
+  if(!pts.length){ mapMsg('좌표가 있는 단지가 없다. 데이터 만들기에서 카카오 키를 넣고 다시 만든다.'); return; }
+  mapMsg('');
+  var lat=pts.reduce(function(s,c){return s+c.lat},0)/pts.length, lng=pts.reduce(function(s,c){return s+c.lng},0)/pts.length;
+  map=new k.maps.Map($('map'),{center:new k.maps.LatLng(lat,lng),level:6});
+  pts.forEach(function(c){
+    var el=document.createElement('div'); el.className='pin'; el.title=c.name; el.setAttribute('role','button'); el.setAttribute('aria-label',c.name);
+    el.addEventListener('click',function(){select(c.code,false)});
+    var ov=new k.maps.CustomOverlay({position:new k.maps.LatLng(c.lat,c.lng),content:el,yAnchor:.5,xAnchor:.5});
+    ov.setMap(map); pins[c.code]=el;
+  });
+  if(ui.sel) focusPin(ui.sel);
+}
+function focusPin(code){
+  Object.keys(pins).forEach(function(k){pins[k].classList.toggle('on',k===code)});
+  var c=BY[code]; if(!map||!c||c.lat==null) return;
+  var k=window.kakao, pos=new k.maps.LatLng(c.lat,c.lng);
+  map.panTo(pos);
+  if(label) label.setMap(null);
+  var el=document.createElement('div'); el.className='pinlabel'; el.textContent=c.name;
+  label=new k.maps.CustomOverlay({position:pos,content:el,yAnchor:1,zIndex:3}); label.setMap(map);
+}
+
+/* ================= 상세 ================= */
+function select(code,fromList){
+  ui.sel=code; renderList(); renderDetail(); focusPin(code);
+  if(!fromList&&window.matchMedia('(max-width:860px)').matches) $('detail').scrollIntoView({behavior:'smooth'});
+}
+function yearOf(d){ d=String(d||''); return d.length>=4?d.slice(0,4)+'년':null; }
+function renderDetail(){
+  var c=BY[ui.sel]; if(!c){ $('detail').innerHTML=emptyHtml(); return; }
+  var pr=dataRating('parking',c), fr=dataRating('fee',c);
+  var html='';
+  html+='<h1 class="cx">'+esc(c.name)+'</h1><p class="addr">'+ICON.pin+' '+esc(c.address||c.jibun||'주소 없음')+'</p>';
+  if(c.geo&&c.geo.check) html+='<div class="warn">지도 위치는 '+esc(c.geo.method)+' 검색 결과라 확인 필요</div>';
+  // 단지 정보
+  html+='<section class="card"><h2>단지 정보 <span class="note">공공데이터 · '+esc(periodText(DATA.meta.feePeriod))+'(관리비)</span></h2>';
+  html+='<div class="facts">'+
+    fact('세대수',c.households!=null?fmt(c.households)+'세대':null,[c.dongs!=null?c.dongs+'개 동':null,yearOf(c.useDate)?yearOf(c.useDate)+' 사용승인':null].filter(Boolean).join(' · '))+
+    fact('세대당 주차',c.parkingPerHH!=null?fmt(c.parkingPerHH,2)+'대':null,c.parkingTotal!=null?'총 '+fmt(c.parkingTotal)+'대 (지상 '+fmt(c.parkingGround||0)+' · 지하 '+fmt(c.parkingUnder||0)+')':'')+
+    fact('관리비 ㎡당 월',val('fee',c)!=null?fmt(val('fee',c))+'원':null,rangeText()+(c.fee&&c.fee.note?' · '+c.fee.note:''))+
+    fact('지하철',c.subway||null,c.subwayWalk?'도보 '+c.subwayWalk:'')+
+  '</div></section>';
+  // 팩트체크
+  html+=renderFactcheck(c,pr,fr);
+  // 평형별 추정
+  html+=renderUnits(c);
+  // 후기 붙여넣기
+  html+=renderForm(c);
+  // 후기 목록
+  html+=renderReviews(c,pr,fr);
+  $('detail').innerHTML=html;
+  bindDetail(c);
+}
+/* 11/08: 처음 온 사람이 224곳 중 시연용 후기가 있는 단지를 바로 찾도록 첫 화면에 보여 줌 */
+function emptyHtml(){
+  var codes=Object.keys(DEMO).filter(function(k){return BY[k]&&DEMO[k]&&DEMO[k].length}).sort(function(a,b){return BY[a].name.localeCompare(BY[b].name,'ko')});
+  var h='<p class="empty">왼쪽 목록이나 지도에서 단지를 고른다.</p>';
+  if(!codes.length) return h;
+  return h+'<section class="card"><h2>키 없이 둘러보기</h2><p class="small" style="margin:0">아래 단지에는 시연용 후기와 미리 받아 둔 AI 분석 결과가 있다. 단지를 고른 뒤 \'시연용 후기 불러오기\'를 누르면 후기-데이터 판정을 볼 수 있다.</p>'+
+    '<div class="actions">'+codes.map(function(k){return '<button type="button" class="ghost" data-demo-go="'+esc(k)+'">'+esc(BY[k].name)+' · 후기 '+DEMO[k].length+'건</button>'}).join('')+'</div></section>';
+}
+function fact(k,v,s){ return '<div><div class="k">'+esc(k)+'</div><div class="v">'+(v==null?'<span class="nodata">데이터 없음</span>':esc(v))+'</div><div class="s">'+esc(s||'')+'</div></div>'; }
+function rangeText(){ return (ui.feeRange==='total'?'총액(공용+개별)':'공용관리비')+' · '+({all:'전체 달 평균',winter:'겨울(1·2월)',summer:'여름(6~8월)'}[ui.feeSeason]); }
+function segBtns(name,cur,opts){ return '<span class="seg" role="group">'+opts.map(function(o){return '<button type="button" data-seg="'+name+'" data-v="'+o[0]+'" aria-pressed="'+(cur===o[0])+'">'+esc(o[1])+'</button>'}).join('')+'</span>'; }
+
+function effRating(r,kind){ var x=r.ratings&&r.ratings[kind]; return x&&x.value?x.value:null; }
+function renderFactcheck(c,pr,fr){
+  var rs=reviewsOf(c.code);
+  var h='<section class="card"><h2>후기-데이터 팩트체크 <span class="note">같은 '+esc(GU)+' 단지 중 상위 1/3이면 데이터 좋음, 하위 1/3이면 나쁨</span></h2>';
+  h+='<div class="ctrls">관리비 기준 '+segBtns('feeRange',ui.feeRange,[['total','총액'],['common','공용']])+segBtns('feeSeason',ui.feeSeason,[['all','전체'],['winter','겨울'],['summer','여름']])+'</div>';
+  h+='<div class="fc"><div class="hd">항목</div><div class="hd">공공데이터</div><div class="hd">후기 평가</div><div class="hd">판정</div>';
+  [['parking','주차',pr],['fee','관리비',fr]].forEach(function(x){
+    var kind=x[0], dr=x[2];
+    var cnt={'좋음':0,'보통':0,'나쁨':0}, vc={}, mentioned=0;
+    rs.forEach(function(r){ var e=effRating(r,kind); if(e&&e!=='언급 없음'){ mentioned++; cnt[e]++; var v=verdict(e,dr); vc[v]=(vc[v]||0)+1; } });
+    var dtxt;
+    if(!dr) dtxt='<span class="badge b-none">데이터 없음</span>';
+    else dtxt='<b>'+esc(dr.label)+'</b> <span class="small">'+esc(kind==='parking'?fmt(dr.v,2)+'대 · '+dr.n+'곳 중 '+dr.rank+'번째로 많음':fmt(dr.v)+'원/㎡ · '+dr.n+'곳 중 '+dr.rank+'번째로 낮음')+'</span>';
+    var rtxt=mentioned?RATINGS.filter(function(k){return cnt[k]}).map(function(k){return k+' '+cnt[k]}).join(' · '):'<span class="small">언급한 후기 없음</span>';
+    var vtxt=mentioned?['일치','엇갈림','판단 보류','데이터 없음'].filter(function(k){return vc[k]}).map(function(k){return badge(k)+'<span class="small">'+vc[k]+'</span> '}).join(''):'<span class="small">판정할 후기 없음</span>';
+    if(mentioned&&mentioned<3) vtxt+='<div class="small">후기가 더 필요해요 ('+mentioned+'/3)</div>';
+    h+='<div class="it">'+esc(x[1])+'</div><div>'+dtxt+'</div><div>'+rtxt+'</div><div>'+vtxt+'</div>';
+  });
+  h+='</div>';
+  // 비교 안 하는 항목: AI가 분류한 언급만 모음
+  var anyA=rs.some(function(r){return !!shownAnalysis(r)});
+  h+='<div class="others">'+ITEMS.slice(2).map(function(it){
+    var cnt={'좋음':0,'보통':0,'나쁨':0}, m=0;
+    rs.forEach(function(r){ var a=shownAnalysis(r); if(a&&a.items[it[0]]&&a.items[it[0]].mentioned){ m++; cnt[a.items[it[0]].rating]=(cnt[a.items[it[0]].rating]||0)+1; } });
+    return '<div><b>'+esc(it[1])+'</b> '+badge('비교 안 함')+'<div class="small">'+(m?'언급 '+m+' ('+RATINGS.filter(function(k){return cnt[k]}).map(function(k){return k+' '+cnt[k]}).join(', ')+')':(anyA?'언급한 후기 없음':'AI 분석 결과 없음'))+'</div></div>';
+  }).join('')+'</div>';
+  h+='<div class="legend">'+badge('일치')+'후기와 데이터가 같은 방향 '+badge('엇갈림')+'직접 확인해 보세요 '+badge('판단 보류')+'어느 한쪽이 보통 '+badge('데이터 없음')+'비교할 공공데이터 없음</div>';
+  h+='</section>';
+  return h;
+}
+function renderUnits(c){
+  var per=val('fee',c);
+  if(!c.units||!c.units.length) return '';
+  var ratio=(c.chargeArea&&c.exclTotal)?c.chargeArea/c.exclTotal:1;
+  var rows=c.units.map(function(u){
+    var est=per!=null?per*u.m2*ratio:null;
+    return '<tr><td>전용 '+fmt(u.m2,1)+'㎡ <span class="small">약 '+fmt(u.m2/3.3058,0)+'평</span></td><td>'+fmt(u.hh)+'세대</td><td class="mono">'+(est==null?'<span class="nodata">데이터 없음</span>':'약 '+fmt(Math.round(est/1000)*1000)+'원')+'</td></tr>';
+  }).join('');
+  return '<section class="card"><h2>평형별 관리비 <span class="note">추정값 · ㎡당 단가 × 세대 부과면적, 실제 고지서와 다를 수 있음</span></h2>'+
+    '<div class="ctrls small">'+esc(rangeText())+' · '+esc(periodText(DATA.meta.feePeriod))+'</div>'+
+    '<table class="units"><thead><tr><th>면적</th><th>세대수</th><th>월 관리비(추정)</th></tr></thead><tbody>'+rows+'</tbody></table></section>';
+}
+function rateRadios(name){
+  return '<div class="rate">'+['언급 없음'].concat(RATINGS).map(function(v,i){return '<label><input type="radio" name="'+name+'" value="'+v+'"'+(i===0?' checked':'')+'>'+v+'</label>'}).join('')+'</div>';
+}
+function renderForm(c){
+  var demo=DEMO[c.code]&&DEMO[c.code].length;
+  return '<section class="card form"><h2>후기 붙여넣기 <span class="note">한 번에 하나, 20~1,000자. 동·호수·전화번호·이메일은 가린 뒤 이 브라우저에만 저장</span></h2>'+
+    '<textarea id="rvText" maxlength="1200" placeholder="다른 곳에서 읽은 이 단지 후기를 붙여넣는다"></textarea>'+
+    '<div class="small" id="rvLen">0 / 1,000자</div><div class="preview" id="rvPrev" hidden></div>'+
+    '<div class="two"><div><label for="rvSrc">출처</label><select id="rvSrc"><option>부동산 앱 후기</option><option>커뮤니티 글</option><option>지인에게 들은 이야기</option><option>직접 거주</option><option>기타</option></select></div>'+
+    '<div><label for="rvSrcNote">출처 메모 (선택)</label><input type="text" id="rvSrcNote" maxlength="60" placeholder="예: 앱 이름, 글 작성 연도"></div></div>'+
+    '<div class="two"><div><label>이 후기의 주차 평가</label>'+rateRadios('rvPark')+'</div><div><label>이 후기의 관리비 평가</label>'+rateRadios('rvFee')+'</div></div>'+
+    '<div class="actions"><button type="button" id="rvSave">보관함에 저장</button>'+(demo?'<button type="button" class="ghost" id="demoLoad">시연용 후기 불러오기 ('+DEMO[c.code].length+')</button>':'')+'</div>'+
+    '<div class="msg" id="rvMsg"></div></section>';
+}
+
+/* ================= 후기 카드 ================= */
+function shownAnalysis(r){ return r.analysis||(r.fallback&&r.demoAnalysis)||null; }
+function highlight(text,a){
+  var ranges=[];
+  if(a) ITEMS.forEach(function(it){ var x=a.items[it[0]]; if(x&&x.evidence){ var i=text.indexOf(x.evidence); if(i>=0) ranges.push([i,i+x.evidence.length]); } });
+  ranges.sort(function(p,q){return p[0]-q[0]});
+  var out='',pos=0;
+  ranges.forEach(function(r){ if(r[0]<pos) return; out+=esc(text.slice(pos,r[0]))+'<mark>'+esc(text.slice(r[0],r[1]))+'</mark>'; pos=r[1]; });
+  return out+esc(text.slice(pos));
+}
+function rateSelect(r,kind){
+  var cur=effRating(r,kind)||'언급 없음', src=r.ratings&&r.ratings[kind]&&r.ratings[kind].src;
+  var srcText={manual:'직접 고름',ai:'AI 분류',edited:'AI 결과를 고침'}[src]||'';
+  return '<label>'+(kind==='parking'?'주차':'관리비')+' <select data-rate="'+kind+'" data-id="'+esc(r.id)+'">'+['언급 없음'].concat(RATINGS).map(function(v){return '<option'+(v===cur?' selected':'')+'>'+v+'</option>'}).join('')+'</select></label>'+(srcText?'<span class="src">'+srcText+'</span>':'');
+}
+function renderReviews(c,pr,fr){
+  var rs=reviewsOf(c.code);
+  var h='<section class="card"><h2>이 단지 후기 '+rs.length+'건</h2>';
+  if(!rs.length) return h+'<p class="small">아직 붙여넣은 후기가 없다.</p></section>';
+  rs.slice().reverse().forEach(function(r){
+    var a=shownAnalysis(r);
+    h+='<article class="review" data-id="'+esc(r.id)+'"><div class="meta"><span class="tag">'+esc(r.source)+'</span>'+(r.sourceNote?'<span>'+esc(r.sourceNote)+'</span>':'')+'<span>'+esc(new Date(r.createdAt).toLocaleDateString('ko-KR'))+' 저장</span>'+(r.demo?'<span class="tag">시연용</span>':'')+(r.masked?'<span>개인정보 '+r.masked+'곳 가림</span>':'')+'</div>';
+    h+='<div class="body">'+highlight(r.text,a)+'</div>';
+    h+='<div class="rrow">'+rateSelect(r,'parking')+' '+(verdict(effRating(r,'parking'),pr)?badge(verdict(effRating(r,'parking'),pr)):'')+
+       rateSelect(r,'fee')+' '+(verdict(effRating(r,'fee'),fr)?badge(verdict(effRating(r,'fee'),fr)):'')+'</div>';
+    h+='<div class="ai">'+aiBlock(r)+'</div>';
+    h+='<div class="actions"><button type="button" class="text" data-del="'+esc(r.id)+'">삭제</button></div></article>';
+  });
+  return h+'</section>';
+}
+function aiBlock(r){
+  var busy=aiBusy[r.id];
+  var btn='<button type="button" class="ghost" data-ai="'+esc(r.id)+'"'+(busy?' disabled':'')+'>'+(busy?'분석 중':(r.analysis?'다시 분석':'AI 후기 분석'))+'</button>';
+  var st=r.aiError?'<div class="msg err">'+esc(r.aiError)+'</div>':(busy?'<div class="msg">'+esc(busy)+'</div>':'');
+  var a=shownAnalysis(r), body='';
+  if(a){
+    var lab=r.analysis?'<span class="small">'+esc(r.analysis.provider+' · '+r.analysis.model+' · '+new Date(r.analysis.at).toLocaleString('ko-KR')+(r.analysis.ms?' · '+(r.analysis.ms/1000).toFixed(1)+'초':''))+'</span>':'<div class="label">미리 받아 둔 분석 결과 ('+esc(r.demoAnalysis.at?new Date(r.demoAnalysis.at).toLocaleDateString('ko-KR'):'날짜 없음')+') · 지금 호출한 결과 아님</div>';
+    body=lab+(a.summary?'<div><b>한 줄 요약</b> '+esc(a.summary)+'</div>':'')+
+      '<table><thead><tr><th>항목</th><th>언급</th><th>평가</th><th>근거 문장</th></tr></thead><tbody>'+ITEMS.map(function(it){
+        var x=a.items[it[0]]||{};
+        return '<tr><td>'+esc(it[1])+'</td><td>'+(x.mentioned?'언급함':'<span class="small">언급 없음</span>')+'</td><td>'+esc(x.rating||'')+'</td><td>'+(x.evidence?esc(x.evidence):(x.dropped?'<span class="small">원문에 없어 버림</span>':''))+'</td></tr>';
+      }).join('')+'</tbody></table>';
+  }
+  return '<div class="actions" style="margin-top:0">'+btn+'</div>'+st+body;
+}
+
+/* ================= 이벤트 ================= */
+function bindDetail(c){
+  var ta=$('rvText');
+  ta.addEventListener('input',function(){
+    var t=ta.value; $('rvLen').textContent=t.trim().length.toLocaleString()+' / 1,000자';
+    var m=maskText(t); var pv=$('rvPrev');
+    pv.hidden=!m.count; pv.textContent=m.count?'저장될 글 (개인정보 '+m.count+'곳 가림)\n'+m.text:'';
+  });
+  $('rvSave').addEventListener('click',function(){
+    var err=validateReview(ta.value); var msg=$('rvMsg');
+    if(err){ msg.className='msg err'; msg.textContent=err; return; }
+    var m=maskText(ta.value.trim());
+    var pick=function(n){var el=document.querySelector('input[name='+n+']:checked'); return el?el.value:'언급 없음'};
+    var r={id:uid(),code:c.code,text:m.text,masked:m.count,source:$('rvSrc').value,sourceNote:$('rvSrcNote').value.trim(),createdAt:new Date().toISOString(),
+      ratings:{parking:{value:pick('rvPark'),src:'manual'},fee:{value:pick('rvFee'),src:'manual'}},analysis:null};
+    if(r.ratings.parking.value==='언급 없음') r.ratings.parking.src=null;
+    if(r.ratings.fee.value==='언급 없음') r.ratings.fee.src=null;
+    var R=loadReviews(); (R[c.code]||(R[c.code]=[])).push(r); saveReviews();
+    renderList(); renderDetail(); var m2=$('rvMsg'); m2.className='msg'; m2.textContent='저장했다. AI 후기 분석을 누르면 6개 항목으로 나눠 본다.';
+  });
+  var dl=$('demoLoad');
+  if(dl) dl.addEventListener('click',function(){
+    var R=loadReviews(), list=R[c.code]||(R[c.code]=[]), added=0;
+    DEMO[c.code].forEach(function(d,i){
+      var did='demo-'+c.code+'-'+i; if(list.some(function(x){return x.id===did})) return;
+      list.push({id:did,code:c.code,text:d.text,masked:0,source:d.source||'시연용',sourceNote:d.sourceNote||'',createdAt:new Date().toISOString(),demo:true,
+        ratings:d.ratings||{parking:{value:'언급 없음',src:null},fee:{value:'언급 없음',src:null}},analysis:null,demoAnalysis:d.analysis||null,
+        fallback:!!d.analysis});   // 11/04: 불러오자마자 '미리 받아 둔 분석 결과'로 표시(이전에는 AI 호출이 실패해야 보였음)
+      added++;
+    });
+    saveReviews(); renderList(); renderDetail(); var m=$('rvMsg'); m.className='msg'; m.textContent=added?'시연용 후기 '+added+'건을 불러왔다.':'이미 불러왔다.';
+  });
+}
+$('detail').addEventListener('click',function(e){
+  var t=e.target.closest('button'); if(!t) return;
+  if(t.dataset.demoGo){ select(t.dataset.demoGo,false); return; }
+  if(t.dataset.seg){ ui[t.dataset.seg]=t.dataset.v; renderDetail(); return; }
+  if(t.dataset.del){
+    if(!confirm('이 후기를 보관함에서 지운다.')) return;
+    var R=loadReviews(); R[ui.sel]=(R[ui.sel]||[]).filter(function(r){return r.id!==t.dataset.del}); if(!R[ui.sel].length) delete R[ui.sel];
+    saveReviews(); renderList(); renderDetail(); return;
+  }
+  if(t.dataset.ai) analyze(t.dataset.ai);
+});
+$('detail').addEventListener('change',function(e){
+  var s=e.target; if(!s.dataset||!s.dataset.rate) return;
+  var r=findReview(s.dataset.id); if(!r) return;
+  var prev=r.ratings[s.dataset.rate]||{};
+  r.ratings[s.dataset.rate]={value:s.value,src:s.value==='언급 없음'?null:(prev.src==='ai'||prev.src==='edited'?'edited':'manual')};
+  saveReviews(); renderDetail();
+});
+function findReview(id){ var rs=reviewsOf(ui.sel); for(var i=0;i<rs.length;i++) if(rs[i].id===id) return rs[i]; return null; }
+
+/* ================= AI 후기 분석 ================= */
+var DEFAULT_MODEL={gemini:'gemini-3.5-flash-lite',claude:'claude-haiku-5-5'};  // 11/04 실제 사용: 3.8 Flash는 503·45초 응답 없음, 3.5 Flash-Lite는 6.8초에 성공
+var memKeys={ai:'',kakao:''};
+var aiBusy={};
+function aiConf(){ var p=lsGet(LS.aiProv)||'gemini'; return {prov:p,model:lsGet(LS.aiModel)||DEFAULT_MODEL[p],key:memKeys.ai||lsGet(LS.aiKey)||''}; }
+function buildPrompt(text){
+  return '너는 아파트 거주 후기를 항목별로 나누는 도구다. 아래 후기에 적힌 내용만 근거로 판단하고 추측하지 않는다.\n'+
+  '항목 키: parking(주차), fee(관리비), transit(교통), noise(소음), maintenance(관리 상태), convenience(생활 편의)\n'+
+  '각 항목마다\n- mentioned: 후기에 그 항목 이야기가 있으면 true, 없으면 false\n- rating: mentioned가 true면 "좋음", "보통", "나쁨" 중 하나, false면 null\n'+
+  '- evidence: mentioned가 true면 근거 문장을 후기에서 글자 그대로 복사(고치거나 줄이지 않음), false면 ""\n'+
+  'summary: 후기 전체를 60자 이내 한 문장으로 요약\n'+
+  'JSON만 출력한다. 형식: {"items":{"parking":{"mentioned":true,"rating":"나쁨","evidence":"..."},"fee":{...},"transit":{...},"noise":{...},"maintenance":{...},"convenience":{...}},"summary":"..."}\n'+
+  '후기:\n"""\n'+text+'\n"""';
+}
+function httpErr(status,body){
+  var e=new Error(); e.status=status;
+  var m={400:'요청 거절(400). 키 또는 모델 이름을 확인한다.',401:'키가 맞지 않다(401).',403:'키 권한이 없다(403).',404:'모델을 찾지 못했다(404). 키 설정에서 모델 이름을 확인한다.',429:'호출 한도를 넘었다(429). 잠시 뒤 다시 시도한다.',500:'서비스 쪽 오류(500).',503:'서비스 쪽 오류(503, 일시적 과부하). 잠시 뒤 다시 시도한다.'}[status];
+  var detail=''; try{ var j=JSON.parse(body); detail=(j.error&&(j.error.message||j.error.type))||''; }catch(x){}
+  if(/API_KEY_INVALID|invalid x-api-key|API key not valid/i.test(detail)) m='키가 맞지 않다. 키 설정을 확인한다.';
+  e.message=(m||('오류 '+status))+(detail?' ('+detail.slice(0,120)+')':''); return e;
+}
+/* 11/04: gemini-3.8-flash는 기본 생각 수준이 '중간'이라 느림 → 3.x Flash는 'low'로 보냄(Flash-Lite는 기본이 'minimal'이라 그대로).
+   공식 문서(ai.google.dev, Gemini thinking): generationConfig.thinkingConfig.thinkingLevel, 3.8 Flash는 low·medium·high 지원 */
+var GEMINI_FALLBACK='gemini-3.5-flash-lite';
+function geminiConfig(conf){
+  var g={temperature:0,responseMimeType:'application/json'};
+  if(!conf.noThinkingCfg&&/^gemini-3/.test(conf.model)&&!/flash-lite/.test(conf.model)) g.thinkingConfig={thinkingLevel:'low'};
+  return g;
+}
+var AI_TIMEOUT=window.DANJI_AI_TIMEOUT||45000;   // 11/04 실제 사용에서 응답 없이 'AI에게 보내는 중'에 멈춤 → 한 번에 45초까지만 기다림
+function callAI(conf,text){
+  var prompt=buildPrompt(text), req;
+  var ctl=window.AbortController?new AbortController():null, timer=ctl?setTimeout(function(){ctl.abort()},AI_TIMEOUT):null;
+  var sig=ctl?ctl.signal:undefined;
+  if(conf.prov==='gemini'){
+    req=fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(conf.model)+':generateContent?key='+encodeURIComponent(conf.key),{method:'POST',signal:sig,
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:geminiConfig(conf)})});
+  } else {
+    req=fetch('https://api.anthropic.com/v1/messages',{method:'POST',signal:sig,
+      headers:{'Content-Type':'application/json','x-api-key':conf.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:conf.model,max_tokens:1200,temperature:0,messages:[{role:'user',content:prompt}]})});
+  }
+  var timeoutErr=function(){ var e=new Error('AI 서비스가 '+(AI_TIMEOUT/1000)+'초 안에 응답하지 않았다(서비스가 바쁘거나 네트워크가 느림).'); e.status=-2; return e; };
+  return req.catch(function(err){ if(timer) clearTimeout(timer); if(err&&err.name==='AbortError') throw timeoutErr(); var e=new Error('네트워크 또는 CORS 차단으로 연결하지 못했다. 인터넷 연결을 확인한다.'); e.status=0; throw e; })
+  .then(function(res){ return res.text().then(function(body){ if(timer) clearTimeout(timer); if(!res.ok) throw httpErr(res.status,body); return body; },function(err){ if(timer) clearTimeout(timer); if(err&&err.name==='AbortError') throw timeoutErr(); throw err; }); })
+  .then(function(body){
+    var j=JSON.parse(body), out;
+    if(conf.prov==='gemini') out=(((j.candidates||[])[0]||{}).content||{}).parts; else out=j.content;
+    var txt=(out||[]).map(function(p){return p.text||''}).join('');
+    txt=txt.replace(/^\s*```(?:json)?/i,'').replace(/```\s*$/,'').trim();
+    var obj; try{ obj=JSON.parse(txt);}catch(e){ var er=new Error('AI 응답이 JSON 형식이 아니라 쓰지 않았다.'); er.status=-1; throw er; }
+    return obj;
+  });
+}
+function squash(s){ return String(s).replace(/[\s"'“”‘’]/g,''); }
+function checkAnalysis(obj,text){
+  if(!obj||typeof obj!=='object'||!obj.items||typeof obj.items!=='object') throw new Error('AI 응답 형식 오류: items 없음');
+  var items={}, base=squash(text);
+  ITEMS.forEach(function(it){
+    var x=obj.items[it[0]];
+    if(!x||typeof x.mentioned!=='boolean') throw new Error('AI 응답 형식 오류: '+it[1]+' 항목');
+    if(!x.mentioned){ items[it[0]]={mentioned:false,rating:null,evidence:''}; return; }
+    if(RATINGS.indexOf(x.rating)<0) throw new Error('AI 응답 형식 오류: '+it[1]+' 평가 값');
+    var ev=String(x.evidence||'').trim(), ok=ev&&base.indexOf(squash(ev))>=0;
+    items[it[0]]={mentioned:true,rating:x.rating,evidence:ok?ev:'',dropped:!!ev&&!ok};
+  });
+  return {items:items,summary:typeof obj.summary==='string'?obj.summary.slice(0,120):''};
+}
+function wait(ms){return new Promise(function(r){setTimeout(r,ms)})}
+function analyze(id){
+  var r=findReview(id); if(!r||aiBusy[id]) return;
+  var conf=aiConf();
+  if(!conf.key){
+    if(r.demoAnalysis){ r.fallback=true; r.aiError='API 키가 없어 미리 받아 둔 결과를 보여 준다.'; saveReviews(); renderDetail(); return; }
+    openSettings('AI 후기 분석에 쓸 API 키를 넣는다.'); return;
+  }
+  // 11/04 실제 사용에서 503(과부하)이 2·5초 재시도 안에 풀리지 않음 → 2·5·15·30초 간격으로 4번까지(약 52초)
+  var delays=[0,2000,5000,15000,30000], attempt=0;
+  r.aiError=null; aiBusy[id]='AI에게 보내는 중 (개인정보를 가린 글만 보냄)'; renderDetail();
+  var started=Date.now();
+  var tick=setInterval(function(){   // 기다리는 동안 몇 초째인지 보여 줌(화면 전체를 다시 그리지 않음)
+    var el=document.querySelector('article.review[data-id="'+id+'"] .ai .msg');
+    if(el&&aiBusy[id]) el.textContent=aiBusy[id]+' · '+Math.round((Date.now()-started)/1000)+'초';
+  },1000);
+  var use={prov:conf.prov,model:conf.model,key:conf.key,noThinkingCfg:false}, timeouts=0, formatErr=0;
+  function once(){
+    return callAI(use,r.text).then(function(obj){ return checkAnalysis(obj,r.text); }).catch(function(e){
+      // 생각 수준 설정을 모델이 받지 않으면(400) 설정 없이 바로 다시 보냄
+      if(e.status===400&&!use.noThinkingCfg&&/thinking/i.test(e.message)){ use.noThinkingCfg=true; return once(); }
+      if(e.status===-2) timeouts++;
+      if(e.status===-1) formatErr++;
+      var busy=e.status===503||e.status===429||e.status===500||e.status===-2;
+      var retry=attempt<delays.length-1&&((busy&&timeouts<2)||(e.status===-1&&formatErr<=2));
+      if(!retry) throw e;
+      attempt++;
+      var switched=false;
+      if(busy&&use.prov==='gemini'&&use.model!==GEMINI_FALLBACK){ use.model=GEMINI_FALLBACK; switched=true; }  // 붐비면 가벼운 모델로
+      var wait_ms=e.status===-2?0:delays[attempt];
+      aiBusy[id]=(e.status===-2?'응답이 늦어':busy?'서비스가 바빠('+e.status+')':'응답 형식이 달라')+
+        (switched?' 가벼운 모델('+use.model+')로':'')+(wait_ms?' '+(wait_ms/1000)+'초 뒤':'')+' 다시 시도 ('+attempt+'/'+(delays.length-1)+')';
+      renderDetail();
+      return wait(wait_ms).then(once);
+    });
+  }
+  once().then(function(a){
+    a.provider=conf.prov==='gemini'?'Gemini':'Claude'; a.model=use.model; a.at=new Date().toISOString(); a.ms=Date.now()-started;
+    r.analysis=a; r.fallback=false; r.aiError=null;
+    ['parking','fee'].forEach(function(k){
+      var cur=r.ratings[k]||{};
+      if(cur.src==='manual'||cur.src==='edited') return;          // 사람이 고른 평가가 우선
+      var x=a.items[k]; r.ratings[k]=x.mentioned?{value:x.rating,src:'ai'}:{value:'언급 없음',src:null};
+    });
+  }).catch(function(e){
+    r.aiError=(e.message||String(e))+(r.demoAnalysis?' 미리 받아 둔 결과를 대신 보여 준다.':'');
+    if(r.demoAnalysis) r.fallback=true;
+  }).then(function(){ clearInterval(tick); delete aiBusy[id]; saveReviews(); renderDetail(); });
+}
+
+/* ================= 키 설정 ================= */
+function openSettings(msg){
+  var conf=aiConf();
+  $('aiProv').value=conf.prov; $('aiModel').value=conf.model; $('aiKey').value=conf.key; $('aiSave').checked=!!lsGet(LS.aiKey);
+  $('kkKey').value=userKakaoKey(); $('kkSave').checked=!!lsGet(LS.kakao);
+  $('kkKey').placeholder=KAKAO_JS_KEY?'비워 두면 기본 키 사용':'';
+  $('kkNote').textContent=KAKAO_JS_KEY?'이 사이트에는 기본 키가 들어 있어 지도는 키 없이 나온다. 다른 카카오 앱의 키를 쓸 때만 넣는다(칸을 비우고 저장하면 기본 키로 돌아감).':'카카오 JavaScript 키를 넣으면 지도가 나온다.';
+  $('setMsg').textContent=msg||''; delete $('setMsg').dataset.confirmed; $('setDlg').showModal();
+}
+$('aiProv').addEventListener('change',function(){ $('aiModel').value=DEFAULT_MODEL[$('aiProv').value]; });
+/* 붙여넣을 때 섞인 공백·줄바꿈을 지우고, 같은 키를 두 번 붙여넣었으면 하나만 남긴다 */
+function cleanKey(v){
+  v=String(v||'').replace(/\s+/g,'');
+  // 절반이 32자 이상(카카오 32자·Gemini 39자)일 때만: 실제 키의 앞뒤가 우연히 같은 경우를 건드리지 않음
+  if(v.length>=64&&v.length%2===0&&v.slice(0,v.length/2)===v.slice(v.length/2)) v=v.slice(0,v.length/2);
+  return v;
+}
+function keyWarning(prov,key){
+  if(!key) return '';
+  if(prov==='gemini'&&!/^AIza[0-9A-Za-z_-]{35}$/.test(key)) return 'Gemini 키는 보통 AIza로 시작하는 39자인데, 지금 '+key.length+'자'+(/^AIza/.test(key)?'':', AIza로 시작하지 않음')+'. Google AI Studio의 API 키를 다시 복사해 붙여넣는다.';
+  if(prov==='claude'&&!/^sk-ant-/.test(key)) return 'Claude 키는 보통 sk-ant-로 시작한다. Console의 API 키인지 확인한다.';
+  return '';
+}
+function kakaoWarning(kk){
+  if(kk&&!/^[0-9a-f]{32}$/i.test(kk)) return '카카오 JavaScript 키는 보통 32자인데, 지금 '+kk.length+'자. REST API 키가 아닌 JavaScript 키인지 확인한다.';
+  return '';
+}
+$('aiKey').addEventListener('input',function(){ delete $('setMsg').dataset.confirmed; $('setMsg').textContent=''; });
+$('kkKey').addEventListener('input',function(){ delete $('setMsg').dataset.confirmed; $('setMsg').textContent=''; });
+$('setSave').addEventListener('click',function(){
+  var prov=$('aiProv').value, key=cleanKey($('aiKey').value), kk=cleanKey($('kkKey').value);
+  $('aiKey').value=key; $('kkKey').value=kk;
+  // 11/04 실제 사용에서 Gemini 키 칸에 약 64자가 들어가 'API key not valid'가 남 → 저장 전에 모양 확인
+  var warn=keyWarning(prov,key)||kakaoWarning(kk);
+  if(warn&&!$('setMsg').dataset.confirmed){ $('setMsg').textContent=warn+' 그래도 저장하려면 저장을 한 번 더 누른다.'; $('setMsg').dataset.confirmed='1'; return; }
+  delete $('setMsg').dataset.confirmed;
+  lsSet(LS.aiProv,prov); lsSet(LS.aiModel,$('aiModel').value.trim()||DEFAULT_MODEL[prov]);
+  memKeys.ai=key; lsSet(LS.aiKey,$('aiSave').checked?key:null);
+  var before=kakaoKey();
+  memKeys.kakao=kk; lsSet(LS.kakao,$('kkSave').checked?kk:null);
+  ssSet(LS.kakao,$('kkSave').checked?null:kk);   // 저장하지 않은 키도 지도를 다시 불러오는 새로고침 뒤 이 탭에서는 유지
+  var after=kakaoKey();
+  $('setDlg').close();
+  // 카카오 SDK는 한 페이지에서 키를 바꿔 다시 불러올 수 없어 새로고침
+  if(before!==after){ if(map||window.kakao){ location.reload(); return; } kakaoP=null; initMap(); }
+});
+document.addEventListener('click',function(e){
+  if(e.target.closest('[data-open-set]')) openSettings();
+  var cl=e.target.closest('[data-close]'); if(cl) cl.closest('dialog').close();
+});
+$('setBtn').addEventListener('click',function(){openSettings()});
+
+/* ================= 보관함 ================= */
+$('vaultBtn').addEventListener('click',renderVault);
+function renderVault(){
+  var R=loadReviews(), codes=Object.keys(R).filter(function(k){return R[k].length});
+  var total=codes.reduce(function(s,k){return s+R[k].length},0), analyzed=0;
+  codes.forEach(function(k){R[k].forEach(function(r){if(r.analysis) analyzed++})});
+  var h='<p class="small">후기는 이 브라우저(localStorage)에만 있다. 다른 PC로 옮기려면 내보내기를 쓴다.</p>';
+  h+='<div class="vrow"><b>전체</b><span>'+codes.length+'개 단지 · 후기 '+total+'건 · AI 분석 '+analyzed+'건</span></div>';
+  codes.forEach(function(k){ var c=BY[k]; h+='<div class="vrow"><button type="button" class="text" data-goto="'+esc(k)+'">'+esc(c?c.name:k)+'</button><span>'+R[k].length+'건</span></div>'; });
+  h+='<h3>내보내기</h3><p class="small">AI 분석까지 끝난 후기를 시연용 파일(demo.js)로 저장한다. index.html 옆에 두면 단지 화면에 "시연용 후기 불러오기"가 생기고, 시연 중 호출이 실패하면 이 결과를 "미리 받아 둔 분석 결과"로 보여 준다.</p>';
+  h+='<div class="actions"><button type="button" id="exDemo"'+(analyzed?'':' disabled')+'>demo.js 내보내기</button><button type="button" class="ghost" id="clearAll"'+(total?'':' disabled')+'>모든 후기 지우기</button></div>';
+  $('vaultBody').innerHTML=h; $('vaultDlg').showModal();
+}
+$('vaultBody').addEventListener('click',function(e){
+  var g=e.target.closest('[data-goto]'); if(g){ $('vaultDlg').close(); select(g.dataset.goto,false); return; }
+  if(e.target.id==='exDemo'){
+    var R=loadReviews(), out={};
+    Object.keys(R).forEach(function(k){ R[k].forEach(function(r){ var a=r.analysis||r.demoAnalysis; if(!a) return;
+      (out[k]||(out[k]=[])).push({text:r.text,source:r.source,sourceNote:r.sourceNote,ratings:r.ratings,analysis:a}); }); });
+    var js='/* 단지팩트 시연용 후기: 보관함에서 내보냄 ('+new Date().toISOString()+'). 후기 작성자의 동의를 받은 글만 넣는다. */\nwindow.DEMO_REVIEWS = '+JSON.stringify(out,null,1)+';\n';
+    var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([js],{type:'text/javascript'})); a.download='demo.js'; document.body.appendChild(a); a.click(); a.remove();
+  }
+  if(e.target.id==='clearAll'){ if(!confirm('보관함의 모든 후기를 지운다. 되돌릴 수 없다.')) return; memReviews={}; saveReviews(); $('vaultDlg').close(); renderList(); renderDetail(); }
+});
+
+var flashT;
+function flash(t){ var b=$('banner'); b.hidden=false; b.textContent=t; clearTimeout(flashT); }
+
+/* ================= 시작 ================= */
+$('region').textContent=(DATA.meta.sido&&!IS_SAMPLE?DATA.meta.sido+' ':'')+GU+' · 단지 '+CX.length+'곳';
+if(IS_SAMPLE){ var b=$('banner'); b.hidden=false; b.textContent='data.js가 없어 예시 데이터로 보여 준다(실제 단지 아님). collect.html로 data.js를 만들어 이 파일 옆에 둔다.'; }
+renderList(); renderDetail(); initMap();
+window.DanjiFact={maskText:maskText,validateReview:validateReview,dataRating:dataRating,verdict:verdict,checkAnalysis:checkAnalysis,ui:ui,select:select};
+})();
+</script>
+</body>
+</html>
